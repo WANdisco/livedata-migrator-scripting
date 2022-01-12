@@ -27,10 +27,10 @@ import logging
 if (2, 6) <= sys.version_info < (3, 0):
     from httplib import HTTPConnection, HTTPSConnection
     from urlparse import urlparse
-    from urllib import urlencode
+    from urllib import urlencode, quote_plus
 else:
     from http.client import HTTPConnection, HTTPSConnection
-    from urllib.parse import urlparse, urlencode
+    from urllib.parse import urlparse, urlencode, quote_plus
 
 # A day in seconds.
 DAY = 24 * 60 * 60
@@ -58,6 +58,9 @@ class UTC(datetime.tzinfo):
 # Use utc in place of datetime.timezone.utc
 utc = UTC()
 
+
+def urlencode_string(string):
+    return quote_plus(string)
 
 def yesterday_timestamp():
     # The first full day we can calculate usage for is yesterday, we work
@@ -185,7 +188,7 @@ def process_migration_stats(days, migration_id, migration_state, migration_stats
     
 
 def get_migration_stats(days, migration_id, config):
-    endpoint = "/stats/" + migration_id
+    endpoint = "/stats/" + urlencode_string(migration_id)
     resp = doHttp("GET", config, endpoint)
     if resp.status != 200:
         raise ValueError(resp.status, resp.reason)
