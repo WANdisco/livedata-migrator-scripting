@@ -38,14 +38,14 @@ def process_file(in_file, args):
     trackers = []
     with open(in_file) as file:
         for line in file:
-            trackers.append(json.loads(line.split()[4]))
+            trackers.append(json.loads(line.split(maxsplit=4)[4]))
     return trackers
 
 def process_file_gz(in_file, args):
     trackers = []
     with gzip.open(in_file) as file:
         for line in file:
-            trackers.append(json.loads(line.split()[4]))
+            trackers.append(json.loads(line.split(maxsplit=4)[4]))
     return trackers
 
 
