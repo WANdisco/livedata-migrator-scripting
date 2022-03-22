@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# -*- coding: utf-8 -*-
 # Copyright © WANDisco 2021
 #
 # Author: Colm Dougan, Mark Mc Keown
