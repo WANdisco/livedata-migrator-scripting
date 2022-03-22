@@ -41,7 +41,7 @@ MIGRATIONS_FORMATTER_INLINE = "%-32s %-7s %19s %3s %10s %3s %14s %15s"
 
 
 class ThroughputSummaryBucket(object):
-    def __init__(self, totalBytes=None, totalFiles=None, peakBytes=None, peakFiles=None):
+    def __init__(self, totalBytes=None, totalFiles=None, peakBytes=None, peakFiles=None, **kwargs):
         self.totalBytes = totalBytes
         self.totalFiles = totalFiles
         self.peakBytes = peakBytes
@@ -49,7 +49,7 @@ class ThroughputSummaryBucket(object):
 
 
 class ThroughputSummaryWrapper(object):
-    def __init__(self, last10Secs=None, last60Secs=None, last300Secs=None):
+    def __init__(self, last10Secs=None, last60Secs=None, last300Secs=None, **kwargs):
         self.last10Secs = last10Secs
         self.last60Secs = last60Secs
         self.last300Secs = last300Secs
@@ -65,7 +65,7 @@ class ThroughputSummaryWrapper(object):
 
 
 class EstimateWrapper(object):
-    def __init__(self, inSeconds=None, asText=None):
+    def __init__(self, inSeconds=None, asText=None, **kwargs):
         self.inSeconds = inSeconds
         self.asText = asText
 
@@ -74,7 +74,7 @@ class EstimateWrapper(object):
 
 
 class MigrationInfo(object):
-    def __init__(self, id=None, path=None, internalId=None, progress=None):
+    def __init__(self, id=None, path=None, internalId=None, progress=None, **kwargs):
         self.id = id
         self.path = path
         self.internalId = internalId
@@ -112,7 +112,8 @@ class MigrationProgress(object):
                  migrationClientBytesBinaryUnitValue=None,
                  migrationTotalTransferredReadableBinaryUnitValue=None,
                  migrationTotalReadableBinaryUnits=None,
-                 migrationClientBytesBinaryUnits=None):
+                 migrationClientBytesBinaryUnits=None, 
+                 **kwargs):
         self.totalBytes = totalBytes
         self.excludedBytes = excludedBytes
         self.duration = duration
