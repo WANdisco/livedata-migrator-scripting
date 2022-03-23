@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # -*- coding: utf-8 -*-
 # Copyright © WANDisco 2021
 #
@@ -58,14 +57,14 @@ class EmailInformer():
     def __init__(self, config):
         self.config = config
 
-    def send_message(self, notification, config, **kwargs):
+    def send_message(self, body, subject, config, **kwargs):
         server = self._connect(config)
 
         for to_addr in config['email_addresses']:
-            msg = MIMEText(notification.as_json())
+            msg = MIMEText(body)
             msg['From'] = config['sender_address']
             msg['To'] = to_addr
-            msg['Subject'] = notification.level + ' ' + notification.type + ' ' + notification.dateCreated
+            msg['Subject'] = subject
 
             data_dict = server.sendmail(config['sender_address'], to_addr, msg.as_string())
             logging.debug("sendmail: %r", data_dict)
@@ -105,27 +104,38 @@ class EmailInformer():
 class NotifiedStore(object):
     def __init__(self, path):
         self.swp_file = path
-        (self.timestamp, self.etag) = self._read()
+        (self.timestamp, self.etag, self.alive) = self._read()
 
     def is_empty(self):
         return self.timestamp == 0
 
     def get(self):
-        return (self.timestamp, self.etag)
+        return (self.timestamp, self.etag, self.alive)
+
+    def down(self):
+        self._put(self.timestamp, self.etag, 'false')
 
     def put(self, timestamp, etag):
+        self._put(timestamp, etag, 'true')
+
+    def _put(self, timestamp, etag, alive):
         with open(self.swp_file, "wb") as fp:  # Pickling
-            pickle.dump((timestamp, etag), fp)
+            pickle.dump((timestamp, etag, alive), fp)
 
         self.timestamp = timestamp
         self.etag = etag
+        self.alive = alive
+
 
     def _read(self):
         if os.path.exists(self.swp_file):
             with open(self.swp_file, "rb") as fp:  # Unpickling
-                return pickle.load(fp)
+                stored = pickle.load(fp)
+                if len(stored) == 2:
+                    return (stored[0], stored[1], 'true')
+                return stored
         else:
-            return (0, None)
+            return (0, None, None)
 
 
 def build_auth_header(username, password):
@@ -137,11 +147,34 @@ def build_auth_header(username, password):
 def get_http_connection(endpoint):
     url = urlparse(endpoint)
     if url.scheme == 'https':
-        print("making https connecting to %s" % url.netloc)
+        print("Making https connecting to %s" % url.netloc)
         return HTTPSConnection(url.netloc)
 
-    print("making http connecting to %s" % url.netloc)
+    print("Making http connecting to %s" % url.netloc)
     return HTTPConnection(url.netloc)
+
+
+def sendConnectionFailed(config):
+    store = NotifiedStore(config['swp_file'])
+    (_, _, alive) = store.get()
+    # If the system was down from previous call then skip
+    # sending e-mail.
+    if alive == 'true':
+        store.down()
+        print('Sending e-mail for failure to connect.')
+        msg_subject = 'WANDisco service unavailable, failed to connect to ' + config['api_endpoint']
+        email_action = EmailInformer(config)
+        email_action.send_message(msg_subject, msg_subject, config)
+        
+    sys.exit(1)
+    
+    
+
+def failedToConnect(config):
+    print("Failed to connected to %s" % config['api_endpoint'])
+    if config['command'] == 'list':
+        sys.exit(1)
+    sendConnectionFailed(config)
 
 
 def doHttp(verb, config, path, etag):
@@ -151,7 +184,10 @@ def doHttp(verb, config, path, etag):
         headers['Authorization'] = build_auth_header(config['username'], config['password'])
     if etag is not None:
         headers['If-None-Match'] = etag
-    conn.request(verb, path, None, headers)
+    try:
+        conn.request(verb, path, None, headers)
+    except:
+        failedToConnect(config)
     return conn.getresponse()
 
 
@@ -196,13 +232,13 @@ def notify(config):
         store.put(latest.timeStamp, None)
         return
 
-    (since, old_etag) = store.get()
+    (since, old_etag, _) = store.get()
     (notifications, etag) = list_notifications(config, old_etag)
     notifications_to_send = filter_notifications(notifications, since, config)
     email_action = EmailInformer(config)
     for notification in notifications_to_send:
         print("Notification: %s %s %s" % (notification.dateCreated, notification.level, notification.type))
-        email_action.send_message(notification, config)
+        email_action.send_message(notification.as_json(), notification.level + ' ' + notification.type + ' ' + notification.dateCreated, config)
         store.put(notification.timeStamp, etag)
 
     return 0
@@ -256,8 +292,10 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
 
     if args.command == 'list':
+        config['command'] = 'list'
         return list(config)
     elif args.command == 'notify':
+        config['command'] = 'notify'
         return notify(config)
     else:
         usage("ldm-notifier [list | notify] [args ...]")
