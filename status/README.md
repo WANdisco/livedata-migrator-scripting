@@ -1,6 +1,10 @@
 #LiveData Migrator Status E-mail Script
 
 This script will poll LiveData Migrator status and send it via e-mail.
+To recieve a daily update of the status of LiveData Migrator configure
+this script to run once a day via a cron job.
+
+**Usage:**
 
     ./ldm-status.py --config status.config status
 
@@ -9,6 +13,8 @@ This will display the status of the LiveData Migrator similar to what is display
     ./ldm-status.py --config status.config notify-status
 
 This will e-mail the status to the e-mail addresses included in the config file.
+
+**Configuration:**
 
 The configuration file status.config holds all the configuration necessary.
 
@@ -38,8 +44,13 @@ The configuration file is as follows:
     }
 
 
-To create a simple test SMTP server run
+**Testing:**
+
+To create a simple test SMTP server run:
 
     python -m smtpd -c DebuggingServer -n localhost:1025
 
+This will start a simple Python SMTP server running on port 1025,
+configure ldm-status to use this SMTP server and you should see
+e-mail's arriving with status details.
 
