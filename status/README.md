@@ -1,4 +1,4 @@
-#LiveData Migrator Status E-mail Script
+# LiveData Migrator Status E-mail Script
 
 This script will poll LiveData Migrator status and send it via e-mail.
 To recieve a daily update of the status of LiveData Migrator configure
