@@ -40,19 +40,16 @@ that.
 
 **Usage**
 
-'''
-
+```
 ldm-schedular.py --howmany 1 --priority-list priorities.txt --username admin --password password --endpoin https://127.0.0.1:18080
-
-'''
+```
 
 When run with the above arguments the script will check how many Migrations
 are in the RUNNING state. If there are less than 1, ie zero, the it will
 look through the priorities.txt for the next Migration that is not started
 and start the Migration.
 
-'''
-
+```
 usage: ldm-schedular.py [-h] --howmany HOWMANY [--priority-list PRIORITY-LIST]
                         [--username USERNAME] [--password PASSWORD]
                         [--endpoint ENDPOINT] [--debug]
@@ -81,5 +78,4 @@ optional arguments:
                         (default: http://localhost:18080)
                         
   --debug
-
-'''
+```
