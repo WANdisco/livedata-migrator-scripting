@@ -1,8 +1,18 @@
 # LiveData Migrator Status E-mail Script
 
 This script will poll LiveData Migrator status and send it via e-mail.
+
 To recieve a daily update of the status of LiveData Migrator configure
-this script to run once a day via a cron job.
+this script to run once a day via a cron job, this allows a user
+to recieve a daily update on the status of their migrations without having
+to log onto the system. 
+
+This is particularly useful if a number of migrations
+are in the RUNNING state and users are waiting for them to switch into 
+the LIVE state. The users also do not need to have access to
+LiveData Migrator to be informed of the status system of the system, this
+saves LiveData Migrator administrators having to answer internal users
+questions on the state of their Migrations.
 
 **Usage:**
 
