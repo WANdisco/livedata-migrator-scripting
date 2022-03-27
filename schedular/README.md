@@ -41,7 +41,9 @@ that.
 **Usage**
 
 '''
+
 ldm-schedular.py --howmany 1 --priority-list priorities.txt --username admin --password password --endpoin https://127.0.0.1:18080
+
 '''
 
 When run with the above arguments the script will check how many Migrations
@@ -50,7 +52,8 @@ look through the priorities.txt for the next Migration that is not started
 and start the Migration.
 
 '''
-usage: ldm-schedular.py [-h] --howmany HOWMANY [--priority-list PRIORITY_LIST]
+
+usage: ldm-schedular.py [-h] --howmany HOWMANY [--priority-list PRIORITY-LIST]
                         [--username USERNAME] [--password PASSWORD]
                         [--endpoint ENDPOINT] [--debug]
 
@@ -59,7 +62,7 @@ optional arguments:
   --howmany HOWMANY     Ensure that HOWMANY migrations are running at once. If there are queued
                         migrations (those created without --auto-start) this script will "run"
                         them to a max of HOWMANY.
-  --priority-list PRIORITY_LIST
+  --priority-list PRIORITY-LIST
                         Optional filename of paths which define a custom priority for migration
                         run order.  The file ordering defines the priority.  If no priority list is
                         supplied or if a particular path is missing from the file the priority will be
@@ -78,4 +81,5 @@ optional arguments:
                         (default: http://localhost:18080)
                         
   --debug
+
 '''
