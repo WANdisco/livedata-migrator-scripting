@@ -1,4 +1,4 @@
-#LiveData Migrator Start/Stop Script
+# LiveData Migrator Start/Stop Script
 
 Script to start or stop migrations. This can be used during maintenance, for example to stop migrations when it is known the target filesystem will be unavailable.
 
