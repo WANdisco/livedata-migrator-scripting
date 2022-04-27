@@ -17,6 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import argparse
 import base64
 import sys
@@ -98,11 +99,10 @@ def start_migrations(config):
 
 def main():
     parser = argparse.ArgumentParser(
-         usage="%(prog)s [OPTION] [stop|start]",
          description="Start or Stop all Migrations.",
     )
 
-    subparsers = parser.add_subparsers(dest='command', required = True,help='stop or start' )
+    subparsers = parser.add_subparsers(dest='command',help='stop or start' )
     # parser for the "stop" command
     parser_list = subparsers.add_parser('stop')
     # parser for the "start" command

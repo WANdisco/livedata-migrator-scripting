@@ -31,6 +31,10 @@ def trackerSortByStart(tracker):
     return tracker['StartTime']
 
 
+def line_to_json(line):
+    log_entry = line.split()[4:]
+    return json.loads(' '.join(log_entry))
+
 def process_file(in_file, args):
     if in_file.endswith('.gz'):
         return process_file_gz(in_file, args)
@@ -38,14 +42,14 @@ def process_file(in_file, args):
     trackers = []
     with open(in_file) as file:
         for line in file:
-            trackers.append(json.loads(line.split(maxsplit=4)[4]))
+            trackers.append(line_to_json(line))
     return trackers
 
 def process_file_gz(in_file, args):
     trackers = []
     with gzip.open(in_file) as file:
         for line in file:
-            trackers.append(json.loads(line.split(maxsplit=4)[4]))
+            trackers.append(line_to_json(line))
     return trackers
 
 

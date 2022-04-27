@@ -55,7 +55,9 @@ def decode_file(file, filename):
     diagnostics = []
     for i, line in enumerate(file):
         try:
-            diagnostics.append(json.loads(line.split(maxsplit=2)[2]))
+            log_entry = line.split()[2:]
+            log_json = ' '.join(log_entry)
+            diagnostics.append(json.loads(log_json))
         except ValueError:
             print("Failed to decode line", i, "of file:", filename, file=sys.stderr)
     return diagnostics
