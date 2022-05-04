@@ -47,7 +47,7 @@ def process_file(in_file, args):
 
 def process_file_gz(in_file, args):
     trackers = []
-    with gzip.open(in_file) as file:
+    with gzip.open(in_file, 'rt') as file:
         for line in file:
             trackers.append(line_to_json(line))
     return trackers

@@ -44,7 +44,7 @@ if sys.version_info.major == 2:
 
 def process_file(in_file):
     if in_file.endswith('.gz'):
-        with gzip.open(in_file) as file:
+        with gzip.open(in_file, 'rt') as file:
             return decode_file(file, in_file)
 
     with open(in_file) as file:
@@ -88,6 +88,13 @@ def init_argparse():
         "-n", action="store",
         help='Number of threads to spawn. By default this will equal the core count of the host machine',
         default=None,
+        type=int,
+    )
+
+    parser.add_argument(
+        "--indent", action="store",
+        help='indent level. default 1',
+        default=1,
         type=int,
     )
 
@@ -143,15 +150,13 @@ def diagnostics_format_by_kind(diagnostics, args, first):
 
 def diagnostics_format(diagnostics, args, first):
     if args.output == "json":
-        return diagnostics_format_json(diagnostics, first)
+        return diagnostics_format_json(diagnostics, first, args.indent)
 
     elif args.output == "csv":
         return diagnostics_format_csv(diagnostics, first)
 
 
-def diagnostics_format_json(diagnostics, first):
-    indent = 4
-
+def diagnostics_format_json(diagnostics, first, indent):
     with StringIO() as sio:
         for i, d in enumerate(diagnostics):
             if not first or i > 0:
