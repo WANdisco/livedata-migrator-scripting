@@ -21,6 +21,7 @@ from __future__ import print_function
 import argparse
 import base64
 import sys
+import re
 import json
 import datetime
 import logging
@@ -68,7 +69,37 @@ def get_migrations(config):
     return json.loads(resp.read())
 
 
-def stop_migrations(config):
+def stop_migration(migration, config):
+    encode_migration_id = urlencode_string(migration['migrationId'])
+    resp = doHttp("POST", config, "/migrations/" + encode_migration_id + "/stop")
+    if resp.status == 200:
+        print("Migration [" + migration['migrationId'] + "][" + migration['path'] +"] stopped")
+    else:
+        error = json.loads(resp.read())
+        print("Migration [" + migration['migrationId'] + "][" + migration['path'] +"] not stopped. " ,resp.status, error['message'])
+    return 
+
+
+def stop_migration_by_pattern(config, args):
+    migrations = get_migrations(config)
+    for migration in migrations:
+      migration_id = migration['migrationId']
+      if args.pattern and not re.search(args.pattern, migration_id):
+           print("Skipping migration [" + migration['migrationId'] + "], does not match " + args.pattern)
+           continue
+      if migration['state'] == 'RUNNING' or migration['state'] == 'LIVE':
+         stop_migration(migration, config)
+      else:
+         print("Not stopping Migration [" + migration['migrationId'] + "][" + migration['path'] +"] as current state is [" + migration['state']  + "]")
+
+    return
+
+def stop_migrations(config, args):
+    if args.pattern:
+       # Need to stop migrations individually
+       stop_migration_by_pattern(config, args)
+       return
+
     resp = doHttp("POST", config, "/migrations/stop")
     if resp.status != 200:
         raise ValueError(resp.status, resp.reason)
@@ -87,15 +118,21 @@ def start_migration(migration, config):
         print("Migration [" + migration['migrationId'] + "][" + migration['path'] +"] not started. " ,resp.status, error['message'])
     return 
 
-def start_migrations(config):
+
+def start_migrations(config, args):
     migrations = get_migrations(config)
     for migration in migrations:
       migration_id = migration['migrationId']
+      if args.pattern and not re.search(args.pattern, migration_id):
+        print("Skipping migration " + migration['migrationId'] + ", does not match " + args.pattern)
+        continue
+
       if migration['state'] != 'STOPPED':
         print("Not starting Migration [" + migration['migrationId'] + "][" + migration['path'] +"] as current state is [" + migration['state']  + "]")
       else:
         start_migration(migration, config)
     return
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -109,11 +146,20 @@ def main():
     parser_list = subparsers.add_parser('start')
 
     parser.add_argument('--config', action = 'store', required=True,  help='Configuration file of format: {"api_endpoint" : "http://localhost:18080", "username" : "foo", "password" : "bar"}')
+    parser.add_argument('--pattern', action = 'store', required=False,  help='Pattern to filter and match Migrations.')
     parser.add_argument('--debug', action='store_true', help='Enable HTTP Debug.')
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:
         config = json.load(f)
+
+    # Test compile the pattern, will throw exception
+    if args.pattern:
+        try:
+           re.compile(args.pattern)
+        except Exception as e:
+           print('Bad pattern "' + args.pattern  +'": ', e)
+           exit(1)
 
     if args.debug:
         HTTPConnection.debuglevel = 1
@@ -121,9 +167,9 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
 
     if args.command == 'start':
-       return start_migrations(config)
+       return start_migrations(config, args)
     elif args.command == 'stop':
-       return stop_migrations(config)
+       return stop_migrations(config, args)
     else:
        return
 

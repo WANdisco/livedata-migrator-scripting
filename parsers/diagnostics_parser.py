@@ -41,6 +41,56 @@ SIMPLE_TYPES = [str, int, float, complex, bool]
 if sys.version_info.major == 2:
     SIMPLE_TYPES.append(unicode)
 
+# For translating names during schema changes.
+type_translation_map = {
+   'ActionStoreDiagnostic' : 'ActionStoreDiagnosticDTO',
+   'CpuLoadDiagnostic' : 'CpuLoadDiagnosticDTO', 
+   'EventManagerDiagnostic' : 'EventManagerDiagnosticDTO',
+   'FileTrackerDiagnostic' : 'FileTrackerDiagnosticDTO',
+   'InotifyDiagnostic' : 'InotifyDiagnosticDTO',
+   'JvmGcDiagnostic' : 'JvmGcDiagnosticDTO',
+   'LinuxPressureDiagnostic' : 'LinuxPressureDiagnosticDTO',
+   'MigrationsDiagnostic' : 'MigrationDiagnosticDTO',
+   'NetworkStatus' : 'NetworkStatusDTO',
+   'ThroughputDiagnostic' : 'ThroughputDiagnosticDTO' 
+}
+
+
+def update_json_schema(diagnostic):
+    for entry in diagnostic['diagnostics']:
+       # Rename activeFileTransfers to fileTrackers
+       if entry['kind'] == 'FileTrackerDiagnostic':
+          trackers = entry['activeFileTransfers']
+          del entry['activeFileTransfers']
+          entry['fileTrackers'] = trackers
+          ratePercentiles = entry['fileTransferRatesPercentiles']
+          del entry['fileTransferRatesPercentiles']
+          entry['fileTransferRatePercentiles'] = ratePercentiles
+       if entry['kind'] == 'ThroughputDiagnostic':
+          timePeriodSeconds = entry['timePeriodSeconds']
+          bytesMigratedForPeriod = entry['bytesMigratedForPeriod'] 
+          filesMigratedForPeriod = entry['filesMigratedForPeriod']
+          peakBytesMigrated = entry['peakBytesMigrated']
+          peakFilesMigrated = entry['peakFilesMigrated']
+          del entry['timePeriodSeconds'] 
+          del entry['bytesMigratedForPeriod'] 
+          del entry['filesMigratedForPeriod']
+          del entry['peakBytesMigrated']
+          del entry['peakFilesMigrated']
+          entry['period'] = timePeriodSeconds
+          entry['bytesMigrated'] = bytesMigratedForPeriod
+          entry['filesMigrated'] = filesMigratedForPeriod
+          entry['peakBytesMigrated'] = peakBytesMigrated
+          entry['peakFilesMigrated'] = peakFilesMigrated
+          
+       # Change from kind to type as the key, change the 
+       # value by adding the 'DTO'
+       new_type = type_translation_map[entry['kind']]
+       del entry['kind']
+       entry['type'] = new_type
+    return diagnostic         
+       
+
 
 def process_file(in_file):
     if in_file.endswith('.gz'):
@@ -57,7 +107,7 @@ def decode_file(file, filename):
         try:
             log_entry = line.split()[2:]
             log_json = ' '.join(log_entry)
-            diagnostics.append(json.loads(log_json))
+            diagnostics.append(update_json_schema(json.loads(log_json)))
         except ValueError:
             print("Failed to decode line", i, "of file:", filename, file=sys.stderr)
     return diagnostics
@@ -74,7 +124,7 @@ def init_argparse():
     )
     parser.add_argument(
         "-k", "--kind", action="store",
-        help='filter Diagnostics by kind, eg --kind NetworkStatus or --kind NetworkStatus/connectionTotals/10.69.102.183'
+        help='filter Diagnostics by kind, eg --kind NetworkStatusDTO or --kind NetworkStatusDTO/connectionTotals/10.69.102.183'
     )
 
     parser.add_argument(
