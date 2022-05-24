@@ -58,6 +58,9 @@ type_translation_map = {
 
 def update_json_schema(diagnostic):
     for entry in diagnostic['diagnostics']:
+       # Skip new schema
+       if not 'kind' in entry:
+          break
        # Rename activeFileTransfers to fileTrackers
        if entry['kind'] == 'FileTrackerDiagnostic':
           trackers = entry['activeFileTransfers']
