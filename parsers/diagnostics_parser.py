@@ -176,14 +176,21 @@ def filter_by_diagnostic_path(diagnostic_type, path, matches, timestamp):
 
 def filter_by_kind_diagnostic_entry(diagnostic_type, kind, matches, timestamp):
     if "/" not in kind:
-        if diagnostic_type['kind'] == kind:
+        if 'kind' in diagnostic_type and diagnostic_type['kind'] == kind:
+            matches.append(diagnostic_type)
+        if 'type' in diagnostic_type and diagnostic_type['type'] == kind:
             matches.append(diagnostic_type)
         return
 
     path = kind.split("/")
-    if diagnostic_type['kind'] == path[0]:
+    if 'kind' in diagnostic_type and diagnostic_type['kind'] == path[0]:
         path.pop(0)
         filter_by_diagnostic_path(diagnostic_type, path, matches, timestamp)
+
+    if 'type' in diagnostic_type and diagnostic_type['type'] == path[0]:
+        path.pop(0)
+        filter_by_diagnostic_path(diagnostic_type, path, matches, timestamp)
+    
 
 
 def filter_by_kind(diagnostic, kind):
@@ -220,10 +227,16 @@ def diagnostics_format_json(diagnostics, first, indent):
 
 
 def diagnostics_format_csv(diagnostics, first):
+    if not diagnostics:
+        return ""
+
     with StringIO() as sio:
         timestamp_key = "timeStamp"
 
         field_names = []
+
+        if not type(diagnostics[0]) is dict:
+            return ""
 
         for key, val in diagnostics[0].items():
             if type(val) in SIMPLE_TYPES:
