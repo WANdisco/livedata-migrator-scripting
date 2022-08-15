@@ -167,6 +167,46 @@ def get_diagnostic_summary_txt(config):
     diagnostic_summary_txt = resp.read()
     return diagnostic_summary_txt.decode("utf-8") 
 
+def get_disk_space_warnings(config):
+    if not 'path_disk_space_check' in config:
+       return []
+    if not 'path_disk_space_percentage' in config:
+       return []
+    
+    warnings = []
+    for path in config['path_disk_space_check']:
+       try:
+          st = os.statvfs(path)
+       except Exception as err:
+          print("Error getting disk usage: " + str(err))
+          continue
+
+       total = st.f_blocks * st.f_frsize
+       used = (st.f_blocks - st.f_bfree) * st.f_frsize
+       percentage_used = int((float(used)/float(total)) * 100)
+       if percentage_used > config['path_disk_space_percentage']:
+           warnings.append("High Disk Usage for [" + path + "], Usage: " + str(percentage_used) + "%. " + str(used/(2**30)) + "GiB/" + str(total/(2**30)) + "GiB")
+    return warnings
+
+def check_for_core_files(config):
+    if not 'check_for_core_files' in config:
+       return []
+
+    hprof_files = []
+    warnings = []
+    try:
+       for root, dirs, files in os.walk(config['check_for_core_files']):
+         for file in files:
+            if file.endswith(".hprof"): 
+               hprof_files.append(os.path.join(root, file))
+    except Exception as err:
+       print("Error searching for core files: " + str(err))
+       return warnings
+
+    if hprof_files:
+       warnings.append("Hprof files found under [" + config['check_for_core_files'] + "]: " + ','.join(hprof_files))
+    return warnings   
+
 def monitor(config):
     timeStamp = int(time.time())
     diagnostic_summary = get_diagnostic_summary(config)
@@ -177,6 +217,8 @@ def monitor(config):
     email_action = EmailInformer(config)
 
     warnings = get_warnings(config, diagnostic_summary, old_time_stamp, old_diagnostic_summary)
+    warnings.extend(get_disk_space_warnings(config))
+    warnings.extend(check_for_core_files(config))
     if len(warnings) > 0:
         body = generate_message_text(config, warnings)
         email_action.send_message("WARN: " + warnings[0], body, config)
