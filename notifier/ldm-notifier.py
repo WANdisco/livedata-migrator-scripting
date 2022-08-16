@@ -225,6 +225,31 @@ def list(config):
         print(n.as_json())
 
 
+def notify_individual_email(store, etag, config, notifications_to_send):
+    email_action = EmailInformer(config)
+    for notification in notifications_to_send:
+        print("Notification: %s %s %s" % (notification.dateCreated, notification.level, notification.type))
+        email_action.send_message(notification.as_json(), notification.level + ' ' + notification.type + ' ' + notification.dateCreated, config)
+        store.put(notification.timeStamp, etag)
+
+def notify_bulk_email(store, etag, config, notifications_to_send):
+    if not notifications_to_send:
+        return
+
+    email_action = EmailInformer(config)
+    message_body = ""
+    priority_notification = notifications_to_send[0]
+    for notification in notifications_to_send:
+        print("Notification: %s %s %s" % (notification.dateCreated, notification.level, notification.type))
+        message_body = message_body + notification.as_json()
+        store.put(notification.timeStamp, etag)
+        if priority_notification.level == "INFO" and (notification.level == "WARN" or notification.level == "ERROR"):
+           priority_notification = notification
+        if priority_notification.level == "WARN" and notification.level == "ERROR":
+           priority_notification = notification
+
+    email_action.send_message(message_body, priority_notification.level + ' ' + priority_notification.type + ' ' + priority_notification.dateCreated, config)
+
 def notify(config):
     store = NotifiedStore(config['swp_file'])
     if store.is_empty():
@@ -235,13 +260,10 @@ def notify(config):
     (since, old_etag, _) = store.get()
     (notifications, etag) = list_notifications(config, old_etag)
     notifications_to_send = filter_notifications(notifications, since, config)
-    email_action = EmailInformer(config)
-    for notification in notifications_to_send:
-        print("Notification: %s %s %s" % (notification.dateCreated, notification.level, notification.type))
-        email_action.send_message(notification.as_json(), notification.level + ' ' + notification.type + ' ' + notification.dateCreated, config)
-        store.put(notification.timeStamp, etag)
-
-    return 0
+    if 'bulk' in config and len(notifications_to_send) > 1:
+       notify_bulk_email(store, etag, config, notifications_to_send)
+    else:
+       notify_individual_email(store, etag, config, notifications_to_send)
 
 
 def filter_notifications(notifications, since, config):
@@ -266,6 +288,7 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--config', help='Configuration file for notifier.')
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--bulk', help="Send single e-mail for multiple Notifications.",  action='store_true')
 
     subparsers = parser.add_subparsers(dest='command')
 
@@ -285,6 +308,9 @@ def main():
 
     with open(args.config, 'r') as f:
         config = json.load(f)
+
+    if args.bulk:
+        config['bulk'] = True
 
     if args.debug:
         HTTPConnection.debuglevel = 1

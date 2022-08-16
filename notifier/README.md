@@ -8,7 +8,7 @@ Note the script will use efficient polling using conditional GET.
 
 The script can be run as follows:
 
-    ./ldm-notifier.py --config notifier.config notify
+    ./ldm-notifier.py --bulk --config notifier.config notify
 
 
 The configuration file notifier.config holds all the configuration necessary.
