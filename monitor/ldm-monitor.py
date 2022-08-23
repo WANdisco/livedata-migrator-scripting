@@ -58,7 +58,7 @@ class EmailInformer():
             msg = MIMEText(diagnostic_summary)
             msg['From'] = config['sender_address']
             msg['To'] = to_addr
-            msg['Subject'] = dt_string + ' ' + warning_summary
+            msg['Subject'] = warning_summary + ' ' + dt_string
 
             data_dict = server.sendmail(config['sender_address'], to_addr, msg.as_string())
             logging.debug("sendmail: %r", data_dict)
@@ -184,18 +184,29 @@ def get_disk_space_warnings(config):
        total = st.f_blocks * st.f_frsize
        used = (st.f_blocks - st.f_bfree) * st.f_frsize
        percentage_used = int((float(used)/float(total)) * 100)
-       if percentage_used > config['path_disk_space_percentage']:
-           warnings.append("High Disk Usage for [" + path + "], Usage: " + str(percentage_used) + "%. " + str(used/(2**30)) + "GiB/" + str(total/(2**30)) + "GiB")
+       if percentage_used >= config['path_disk_space_percentage']:
+           warnings.append("High Disk Usage for [" + path + "], Usage: " + str(percentage_used) + "%. " + str(int(used/(2**30))) + "GiB/" + str(int(total/(2**30))) + "GiB")
     return warnings
+
 
 def check_for_core_files(config):
     if not 'check_for_core_files' in config:
        return []
 
+    if not isinstance(config['check_for_core_files'], list):
+       return check_for_core_files_under_path(config['check_for_core_files'])
+
+    warnings = []
+    for path in config['check_for_core_files']:
+       warnings.extend(check_for_core_files_under_path(path))
+    return warnings
+
+
+def check_for_core_files_under_path(path):
     hprof_files = []
     warnings = []
     try:
-       for root, dirs, files in os.walk(config['check_for_core_files']):
+       for root, dirs, files in os.walk(path):
          for file in files:
             if file.endswith(".hprof"): 
                hprof_files.append(os.path.join(root, file))
@@ -204,12 +215,17 @@ def check_for_core_files(config):
        return warnings
 
     if hprof_files:
-       warnings.append("Hprof files found under [" + config['check_for_core_files'] + "]: " + ','.join(hprof_files))
+       warnings.append("Hprof files found under [" + path + "]: " + ','.join(hprof_files))
     return warnings   
+
 
 def monitor(config):
     timeStamp = int(time.time())
     diagnostic_summary = get_diagnostic_summary(config)
+    
+    label = ""
+    if 'e_mail_subject_label' in config:
+        label = config['e_mail_subject_label'] + ' '
 
     store = MonitorStore(config['swp_file'])
     (old_time_stamp, old_diagnostic_summary, _) = store.get() 
@@ -221,7 +237,7 @@ def monitor(config):
     warnings.extend(check_for_core_files(config))
     if len(warnings) > 0:
         body = generate_message_text(config, warnings)
-        email_action.send_message("WARN: " + warnings[0], body, config)
+        email_action.send_message(label + "WARN: " + warnings[0], body, config)
 
 def generate_message_text(config, warnings):
     return """

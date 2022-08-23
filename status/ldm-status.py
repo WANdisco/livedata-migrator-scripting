@@ -177,6 +177,9 @@ class EmailInformer():
 
     def send_message(self, status, config, **kwargs):
         server = self._connect(config)
+        label = ""
+        if 'e_mail_subject_label' in config:
+              label = config['e_mail_subject_label'] + ' '
 
         for to_addr in config['email_addresses']:
             # Set MIME type.
@@ -184,7 +187,7 @@ class EmailInformer():
             msg['From'] = config['sender_address']
             msg['To'] = to_addr
             # E-mail Subject Line.
-            msg['Subject'] = 'WANDisco LiveData Migrator Status ' + str(datetime.datetime.now())
+            msg['Subject'] = label + 'WANDisco LiveData Migrator Status ' + str(datetime.datetime.now())
 
             data_dict = server.sendmail(config['sender_address'], to_addr, msg.as_string())
             logging.debug("sendmail: %r", data_dict)

@@ -227,14 +227,23 @@ def list(config):
 
 def notify_individual_email(store, etag, config, notifications_to_send):
     email_action = EmailInformer(config)
+    label = ""
+    if 'e_mail_subject_label' in config:
+        label = config['e_mail_subject_label'] + ' '
+
     for notification in notifications_to_send:
         print("Notification: %s %s %s" % (notification.dateCreated, notification.level, notification.type))
-        email_action.send_message(notification.as_json(), notification.level + ' ' + notification.type + ' ' + notification.dateCreated, config)
+        email_action.send_message(notification.as_json(), label + notification.level + ' ' + notification.type + ' ' + notification.dateCreated, config)
         store.put(notification.timeStamp, etag)
+
 
 def notify_bulk_email(store, etag, config, notifications_to_send):
     if not notifications_to_send:
         return
+
+    label = ""
+    if 'e_mail_subject_label' in config:
+        label = config['e_mail_subject_label'] + ' '
 
     email_action = EmailInformer(config)
     message_body = ""
@@ -248,7 +257,8 @@ def notify_bulk_email(store, etag, config, notifications_to_send):
         if priority_notification.level == "WARN" and notification.level == "ERROR":
            priority_notification = notification
 
-    email_action.send_message(message_body, priority_notification.level + ' ' + priority_notification.type + ' ' + priority_notification.dateCreated, config)
+    email_action.send_message(message_body, label + priority_notification.level + ' ' + priority_notification.type + ' ' + priority_notification.dateCreated, config)
+
 
 def notify(config):
     store = NotifiedStore(config['swp_file'])
