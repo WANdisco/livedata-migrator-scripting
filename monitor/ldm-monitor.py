@@ -22,6 +22,7 @@ import base64
 import json
 import logging
 import os
+import re
 import pickle
 import sys
 import smtplib
@@ -188,6 +189,34 @@ def get_disk_space_warnings(config):
            warnings.append("High Disk Usage for [" + path + "], Usage: " + str(percentage_used) + "%. " + str(int(used/(2**30))) + "GiB/" + str(int(total/(2**30))) + "GiB")
     return warnings
 
+def check_for_tmp_log_files(config):
+    if not 'check_for_log_tmp_files' in config:
+       return []
+
+    
+    warnings = []
+    for path in config['check_for_log_tmp_files']:
+       warnings.extend(check_for_log_tmp_files_under_path(path))
+    return warnings
+
+def check_for_log_tmp_files_under_path(path):
+    tmp_log_files = []
+    warnings = []
+    reg_ex = re.compile('\.log[0-9]+\.tmp$')
+
+    try:
+       for root, dirs, files in os.walk(path):
+           for file in files:
+               m = reg_ex.search(file)
+               if m:
+                  tmp_log_files.append(os.path.join(root, file))
+    except Exception as err:
+       print("Error searching for tmp log files: " + str(err)) 
+       return warnings
+               
+    if tmp_log_files:
+       warnings.append("tmp log files found under [" + path + "]: " + ','.join(tmp_log_files))
+    return warnings
 
 def check_for_core_files(config):
     if not 'check_for_core_files' in config:
@@ -235,6 +264,7 @@ def monitor(config):
     warnings = get_warnings(config, diagnostic_summary, old_time_stamp, old_diagnostic_summary)
     warnings.extend(get_disk_space_warnings(config))
     warnings.extend(check_for_core_files(config))
+    warnings.extend(check_for_tmp_log_files(config))
     if len(warnings) > 0:
         body = generate_message_text(config, warnings)
         email_action.send_message(label + "WARN: " + warnings[0], body, config)
