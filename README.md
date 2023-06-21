@@ -11,3 +11,5 @@
 **daily-usage** Script to generate a CSV report of the daily amount of data migrated per Migration.
 
 **parsers** Scripts for parsing logs files and generating reports. 
+
+**delete** Script to remove extra files on a target. Script uses a verification report and will delete any files and directories that are on the target but not on the source.
