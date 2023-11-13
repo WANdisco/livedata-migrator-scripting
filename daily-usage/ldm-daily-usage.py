@@ -23,6 +23,7 @@ import sys
 import json
 import datetime
 import logging
+import os.path
 
 if (2, 6) <= sys.version_info < (3, 0):
     from httplib import HTTPConnection, HTTPSConnection
@@ -233,8 +234,17 @@ def main():
     parser.add_argument('--date', action='store', help='Limit display to single date, must be in format 2021-11-24. If the date is not available then there will be a blank entry.')
     args = parser.parse_args()
 
-    with open(args.config, 'r') as f:
-        config = json.load(f)
+    if os.path.isfile(args.config):
+        with open(args.config, 'r') as f:
+            try:
+                config = json.load(f)
+            except(json.decoder.JSONDecodeError) as error:
+                print(f"The config file, {args.config}, is not in the correct format.")
+                print(error)
+                sys.exit(1)
+    else:
+        print(f"{args.config} does not exist. ")
+        sys.exit(1)
 
     if args.debug:
         HTTPConnection.debuglevel = 1
@@ -242,7 +252,6 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
 
     return daily_usage(config, args)
-
 
 if __name__ == "__main__":
     sys.exit(main())
