@@ -238,12 +238,12 @@ def main():
         with open(args.config, 'r') as f:
             try:
                 config = json.load(f)
-            except(json.decoder.JSONDecodeError) as error:
-                print(f"The config file, {args.config}, is not in the correct format.")
+            except Exception as error:
+                print("The config file, {0}, is not in the correct format.".format(args.config))
                 print(error)
                 sys.exit(1)
     else:
-        print(f"{args.config} does not exist. ")
+        print("{0} does not exist.".format(args.config))
         sys.exit(1)
 
     if args.debug:
