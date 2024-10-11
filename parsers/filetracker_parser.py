@@ -21,11 +21,20 @@ import argparse
 import json
 import sys
 import gzip
+import datetime
 
+
+def getDate(timestamp):
+    # converting timestamp depends on python version
+    if (2, 6) <= sys.version_info < (3, 0):
+       return datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.fromtimestamp(timestamp, datetime.UTC).strftime('%Y-%m-%d %H:%M:%S') 
 
 def print_column_header():
     print('%40s %12s %8s %12s %12s %8s %12s %8s' % ('Path', 'Time Start', 'Offset', 'Bytes/s', 'File Size', 'Time(s)', 'Transferred', 'Attempt'))
 
+def print_csv_header():
+    print('%s, %s, %s, %s, %s, %s, %s, %s, %s' % ('Path', 'Time Start', 'Date', 'Offset', 'Bytes/s', 'File Size', 'Time(s)', 'Transferred', 'Attempt'))
 
 def trackerSortByStart(tracker):
     return tracker['StartTime']
@@ -51,6 +60,18 @@ def process_file_gz(in_file, args):
         for line in file:
             trackers.append(line_to_json(line))
     return trackers
+
+def process_trackers_csv(trackers, args):
+    print_csv_header()
+    if not trackers:
+       return
+    firstStartTime = trackers[0]['StartTime']
+    for tracker in trackers:
+        process_tracker_csv(firstStartTime, tracker, args)
+
+def process_tracker_csv(firstStartTime, tracker, args):
+    date = getDate(tracker['StartTime']/1000)
+    print('%s, %d, %s, %d, %d, %d, %d, %s, %d' % (tracker['Path'], tracker['StartTime']/1000, date, (tracker['StartTime'] - firstStartTime)/1000, tracker['BytesPerSecond'], tracker['FileLength'], (tracker['CompleteTime'] - tracker['StartTime']) / 1000, tracker['IsSuccessful'], tracker['AttemptCount'] ))
 
 
 def process_trackers_column(trackers, args):
@@ -78,12 +99,16 @@ def init_argparse():
     )
     parser.add_argument(
         "-v", "--version", action="version",
-        version="{parser.prog} version 1.0.0"
+        version="{parser.prog} version 2.0.0"
     )
     parser.add_argument('-c',
                        '--column',
                        action='store_true',
                        help='display FileTacker in column format.')
+    parser.add_argument('-s',
+                       '--csv',
+                       action='store_true',
+                       help='display FileTacker in csv format.')
     parser.add_argument("files", nargs="*")
     return parser
 
@@ -97,6 +122,8 @@ def main():
     trackers.sort(key=trackerSortByStart)
     if args.column:
        process_trackers_column(trackers, args)
+    elif args.csv:
+       process_trackers_csv(trackers, args)
     else:
        process_trackers_json(trackers, args)
 
