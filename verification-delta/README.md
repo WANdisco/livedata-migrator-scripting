@@ -9,13 +9,13 @@ resolved and which are new.
 
 **Usage:**
 
-python3 ldm-verification-delta.py --h
-usage: ldm-verification-delta.py [-h] [--debug] [--output OUTPUT] --first FIRST --second SECOND
+    python3 ldm-verification-delta.py --h
+    usage: ldm-verification-delta.py [-h] [--debug] [--output OUTPUT] --first FIRST --second SECOND
 
-options:
-  -h, --help       show this help message and exit
-  --debug
-  --output OUTPUT  Store the output into csv files.
-  --first FIRST    First verification report to check against.
-  --second SECOND  Second verification report to check against.
+    options:
+        -h, --help       show this help message and exit
+        --debug
+        --output OUTPUT  Store the output into csv files.
+        --first FIRST    First verification report to check against.
+        --second SECOND  Second verification report to check against.
 
