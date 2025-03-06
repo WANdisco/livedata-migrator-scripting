@@ -77,10 +77,8 @@ def get_license_information(host_config):
 
 
 def create_output_header(args):
-    header = ("LM2 ID,License Type,Data Limit in Bytes,Data Used in Bytes,Data Remaining in Bytes,Expiry Date,"
-              "Collection Time")
-    if args.debug:
-        header += ", Config Host ID"
+    header = ("Config Host ID,LM2 ID,License Type,Data Limit in Bytes,Data Used in Bytes,Data Remaining in Bytes,"
+              "Expiry Date,Collection Time")
     return header
 
 
@@ -123,8 +121,7 @@ def license_information(config, args):
             row_details = create_row(node_uuid, ldm_license, component, collection_time)
 
             if row_details:
-                if args.debug:
-                    row_details = row_details + "," + k
+                row_details = k + "," + row_details
                 rows.append(row_details)
 
     write_output(args, header, rows)
