@@ -55,25 +55,35 @@ def doHttp(verb, config, path):
     headers = {}
     if config['username']:
         headers['Authorization'] = build_auth_header(config['username'], config['password'])
-    conn.request(verb, path, None, headers)
-    return conn.getresponse()
+    try:
+        conn.request(verb, path, None, headers)
+        response = conn.getresponse()
+    except Exception as e:
+        response = f'{e}'
+    return response
 
 
 def get_instance_uuid(host_config):
     resp = doHttp("GET", host_config, "/info/nodeID")
-    if resp.status != 200:
-        raise ValueError(resp.status, resp.reason)
-
-    inst_uuid = resp.read()
-    return inst_uuid.decode('utf-8')
+    if (not hasattr(resp, 'status')) or (resp.status != 200):
+        response = f'Failed to get LM2 instance UUID'
+    else:
+        inst_uuid = resp.read()
+        response = inst_uuid.decode('utf-8')
+    return response
 
 
 def get_license_information(host_config):
     resp = doHttp("GET", host_config, "/license")
-    if resp.status != 200:
-        raise ValueError(resp.status, resp.reason)
-
-    return json.loads(resp.read())
+    if (not hasattr(resp, 'status')) or (resp.status != 200):
+        response = {
+            'components': [
+                {'failed': 'Failed to get LM2 instance license information'}
+            ]
+        }
+    else:
+        response = json.loads(resp.read())
+    return response
 
 
 def create_output_header(args):
@@ -91,6 +101,9 @@ def create_row(node_uuid, ldm_license, component, collection_time):
                                                     collection_time)
     elif 'consumption' in component:
         row_details = "{},{},{},{},{},{},{}".format(node_uuid, component['licenseType'], '', '', '', '',
+                                                    collection_time)
+    elif 'failed' in component:
+        row_details = "{},{},{},{},{},{},{}".format(node_uuid, component['failed'], '', '', '', '',
                                                     collection_time)
     return row_details
 
