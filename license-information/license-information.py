@@ -59,14 +59,14 @@ def doHttp(verb, config, path):
         conn.request(verb, path, None, headers)
         response = conn.getresponse()
     except Exception as e:
-        response = f'{e}'
+        response = '{}'.format(e)
     return response
 
 
 def get_instance_uuid(host_config):
     resp = doHttp("GET", host_config, "/info/nodeID")
     if (not hasattr(resp, 'status')) or (resp.status != 200):
-        response = f'Failed to get LM2 instance UUID'
+        response = 'Failed to get LM2 instance UUID'
     else:
         inst_uuid = resp.read()
         response = inst_uuid.decode('utf-8')
